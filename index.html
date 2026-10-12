@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Malaria Detection · Deep Learning Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117; --surface: #161b22; --card: #1c2330; --border: #2d3748;
+    --accent: #00d4aa; --accent2: #ff6b6b; --accent3: #f59e0b; --accent4: #818cf8;
+    --text: #e6edf3; --muted: #7d8590;
+    --todo: #2d3748; --inprog: #1e3a5f; --review: #2d1f47; --done: #1a3a2a;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  .header { background: linear-gradient(135deg, #0d1117 0%, #161b22 100%); border-bottom: 1px solid var(--border); padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-badge { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent4)); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; color: #0d1117; }
+  .project-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -0.3px; }
+  .project-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .header-right { display: flex; gap: 10px; align-items: center; }
+  .chip { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 5px 13px; font-size: 12px; color: var(--muted); }
+  .chip.green { border-color: var(--accent); color: var(--accent); }
+  .tabs { display: flex; gap: 0; padding: 0 28px; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .tab { padding: 12px 18px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; user-select: none; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text); }
+  .board-wrap { padding: 24px 28px; overflow-x: auto; }
+  .board { display: flex; gap: 18px; min-width: max-content; }
+  .col { width: 280px; flex-shrink: 0; }
+  .col-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 10px 10px 0 0; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; }
+  .col-head.todo { background: var(--todo); border-left: 3px solid var(--muted); }
+  .col-head.inprog { background: var(--inprog); border-left: 3px solid #3b9eff; }
+  .col-head.review { background: var(--review); border-left: 3px solid var(--accent4); }
+  .col-head.done { background: var(--done); border-left: 3px solid var(--accent); }
+  .col-count { min-width: 20px; height: 20px; border-radius: 10px; background: rgba(255,255,255,0.1); font-size: 11px; display: flex; align-items: center; justify-content: center; padding: 0 6px; }
+  .col-body { background: rgba(22,27,34,0.6); border: 1px solid var(--border); border-top: none; border-radius: 0 0 10px 10px; padding: 10px; min-height: 60px; display: flex; flex-direction: column; gap: 9px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; cursor: grab; transition: all 0.2s; animation: fadeIn 0.3s ease; }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,212,170,0.1); }
+  .card:active { cursor: grabbing; }
+  .card.dragging { opacity: 0.4; transform: rotate(2deg); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .card-title { font-size: 13px; font-weight: 500; line-height: 1.4; margin-bottom: 9px; }
+  .card-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .tag.ml { background: rgba(129,140,248,0.15); color: var(--accent4); }
+  .tag.data { background: rgba(245,158,11,0.15); color: var(--accent3); }
+  .tag.infra { background: rgba(0,212,170,0.12); color: var(--accent); }
+  .tag.research { background: rgba(255,107,107,0.15); color: var(--accent2); }
+  .tag.deploy { background: rgba(59,158,255,0.15); color: #3b9eff; }
+  .priority { font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+  .priority.high { background: rgba(255,107,107,0.15); color: var(--accent2); }
+  .priority.med { background: rgba(245,158,11,0.12); color: var(--accent3); }
+  .priority.low { background: rgba(125,133,144,0.15); color: var(--muted); }
+  .assignee { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; margin-left: auto; flex-shrink: 0; }
+  .due { font-size: 10px; color: var(--muted); display: flex; align-items: center; gap: 3px; }
+  .due.soon { color: var(--accent3); }
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent4)); border-radius: 2px; }
+  .add-btn { display: flex; align-items: center; gap: 6px; padding: 7px 10px; color: var(--muted); font-size: 12px; cursor: pointer; border-radius: 6px; transition: all 0.2s; user-select: none; margin-top: 4px; }
+  .add-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+  .stats-bar { display: flex; gap: 20px; padding: 14px 28px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; }
+  .stat-val { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .stat-val.green { color: var(--accent); } .stat-val.blue { color: #3b9eff; } .stat-val.purple { color: var(--accent4); } .stat-val.orange { color: var(--accent3); }
+  .divider { width: 1px; background: var(--border); align-self: stretch; }
+  .sprint-badge { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.2); color: var(--accent); font-size: 11px; padding: 3px 10px; border-radius: 20px; margin: 14px 28px 0; font-weight: 600; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <div class="logo-badge">M</div>
+    <div>
+      <div class="project-name">Malaria Detection · Deep Learning</div>
+      <div class="project-sub">Research & Development Planner</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="chip">Sprint 2 of 4</div>
+    <div class="chip green">● Active</div>
+  </div>
+</div>
+<div class="tabs">
+  <div class="tab active">Board</div>
+  <div class="tab">Timeline</div>
+  <div class="tab">Charts</div>
+  <div class="tab">Members</div>
+</div>
+<div class="stats-bar">
+  <div class="stat"><span class="stat-val green">18</span><span class="stat-label">Total Tasks</span></div>
+  <div class="divider"></div>
+  <div class="stat"><span class="stat-val blue">5</span><span class="stat-label">In Progress</span></div>
+  <div class="divider"></div>
+  <div class="stat"><span class="stat-val purple">3</span><span class="stat-label">In Review</span></div>
+  <div class="divider"></div>
+  <div class="stat"><span class="stat-val orange">6</span><span class="stat-label">Completed</span></div>
+  <div class="divider"></div>
+  <div class="stat"><span class="stat-val" style="color:var(--accent2)">Apr 28</span><span class="stat-label">Deadline</span></div>
+</div>
+<div class="sprint-badge"><div class="dot"></div>Sprint 2 — Model Training & Evaluation</div>
+<div class="board-wrap">
+<div class="board" id="board">
+  <div class="col">
+    <div class="col-head todo"><span>📋 TO DO</span><span class="col-count" id="cnt-todo">4</span></div>
+    <div class="col-body" id="col-todo" ondragover="onDragOver(event)" ondrop="onDrop(event,'todo')">
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-t1')" id="card-t1"><div class="card-title">Collect & annotate additional blood smear images (Giemsa-stained)</div><div class="card-meta"><span class="tag data">Data</span><span class="priority high">High</span><span class="assignee" style="background:#2d1f47;color:var(--accent4)">AK</span></div><div class="due soon">📅 Apr 2</div></div>
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-t2')" id="card-t2"><div class="card-title">Research EfficientNet vs ResNet for cell classification</div><div class="card-meta"><span class="tag research">Research</span><span class="priority med">Med</span><span class="assignee" style="background:#1a3a2a;color:var(--accent)">RV</span></div><div class="due">📅 Apr 5</div></div>
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-t3')" id="card-t3"><div class="card-title">Define evaluation metrics: sensitivity, specificity, AUC-ROC</div><div class="card-meta"><span class="tag ml">ML</span><span class="priority med">Med</span><span class="assignee" style="background:#1e3a5f;color:#3b9eff">SM</span></div><div class="due">📅 Apr 6</div></div>
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-t4')" id="card-t4"><div class="card-title">Set up MLflow experiment tracking for model runs</div><div class="card-meta"><span class="tag infra">Infra</span><span class="priority low">Low</span><span class="assignee" style="background:#2d3748;color:var(--muted)">PK</span></div><div class="due">📅 Apr 8</div></div>
+    </div>
+    <div class="add-btn" onclick="addCard('todo')">＋ Add task</div>
+  </div>
+  <div class="col">
+    <div class="col-head inprog"><span>⚡ IN PROGRESS</span><span class="col-count" id="cnt-inprog">5</span></div>
+    <div class="col-body" id="col-inprog" ondragover="onDragOver(event)" ondrop="onDrop(event,'inprog')">
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-p1')" id="card-p1"><div class="card-title">Implement data augmentation pipeline (rotation, flip, zoom)</div><div class="card-meta"><span class="tag ml">ML</span><span class="priority high">High</span><span class="assignee" style="background:#1a3a2a;color:var(--accent)">RV</span></div><div class="due soon">📅 Mar 30</div><div class="progress-bar"><div class="progress-fill" style="width:70%"></div></div></div>
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-p2')" id="card-p2"><div class="card-title">Train CNN baseline model on NIH Malaria Cell Image Dataset</div><div class="card-meta"><span class="tag ml">ML</span><span class="priority high">High</span><span class="assignee" style="background:#2d1f47;color:var(--accent4)">AK</span></div><div class="due soon">📅 Apr 1</div><div class="progress-bar"><div class="progress-fill" style="width:45%"></div></div></div>
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-p3')" id="card-p3"><div class="card-title">Preprocess microscopy images: resize, normalize, denoise</div><div class="card-meta"><span class="tag data">Data</span><span class="priority med">Med</span><span class="assignee" style="background:#1e3a5f;color:#3b9eff">SM</span></div><div class="due">📅 Apr 3</div><div class="progress-bar"><div class="progress-fill" style="width:85%"></div></div></div>
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-p4')" id="card-p4"><div class="card-title">Build Grad-CAM visualization for model explainability</div><div class="card-meta"><span class="tag research">Research</span><span class="priority med">Med</span><span class="assignee" style="background:#2d3748;color:var(--muted)">PK</span></div><div class="due">📅 Apr 7</div><div class="progress-bar"><div class="progress-fill" style="width:30%"></div></div></div>
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-p5')" id="card-p5"><div class="card-title">Transfer learning fine-tuning with MobileNetV2</div><div class="card-meta"><span class="tag ml">ML</span><span class="priority high">High</span><span class="assignee" style="background:#1a3a2a;color:var(--accent)">RV</span></div><div class="due soon">📅 Apr 4</div><div class="progress-bar"><div class="progress-fill" style="width:55%"></div></div></div>
+    </div>
+    <div class="add-btn" onclick="addCard('inprog')">＋ Add task</div>
+  </div>
+  <div class="col">
+    <div class="col-head review"><span>🔍 IN REVIEW</span><span class="col-count" id="cnt-review">3</span></div>
+    <div class="col-body" id="col-review" ondragover="onDragOver(event)" ondrop="onDrop(event,'review')">
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-r1')" id="card-r1"><div class="card-title">Literature review: YOLO-based parasite detection approaches</div><div class="card-meta"><span class="tag research">Research</span><span class="priority high">High</span><span class="assignee" style="background:#1e3a5f;color:#3b9eff">SM</span></div><div class="due">📅 Mar 29</div></div>
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-r2')" id="card-r2"><div class="card-title">Dataset split strategy: 70/15/15 train-val-test with stratification</div><div class="card-meta"><span class="tag data">Data</span><span class="priority med">Med</span><span class="assignee" style="background:#2d1f47;color:var(--accent4)">AK</span></div><div class="due">📅 Mar 28</div></div>
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-r3')" id="card-r3"><div class="card-title">Flask API scaffold for model inference endpoint</div><div class="card-meta"><span class="tag deploy">Deploy</span><span class="priority med">Med</span><span class="assignee" style="background:#2d3748;color:var(--muted)">PK</span></div><div class="due">📅 Apr 2</div></div>
+    </div>
+    <div class="add-btn" onclick="addCard('review')">＋ Add task</div>
+  </div>
+  <div class="col">
+    <div class="col-head done"><span>✅ DONE</span><span class="col-count" id="cnt-done">6</span></div>
+    <div class="col-body" id="col-done" ondragover="onDragOver(event)" ondrop="onDrop(event,'done')">
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-d1')" id="card-d1" style="opacity:0.7"><div class="card-title">Project proposal & scope definition submitted</div><div class="card-meta"><span class="tag research">Research</span><span class="assignee" style="background:#1a3a2a;color:var(--accent)">RV</span></div></div>
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-d2')" id="card-d2" style="opacity:0.7"><div class="card-title">Download & verify NIH Malaria dataset (27,558 images)</div><div class="card-meta"><span class="tag data">Data</span><span class="assignee" style="background:#2d1f47;color:var(--accent4)">AK</span></div></div>
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-d3')" id="card-d3" style="opacity:0.7"><div class="card-title">Configure GPU training environment (Google Colab / local)</div><div class="card-meta"><span class="tag infra">Infra</span><span class="assignee" style="background:#1e3a5f;color:#3b9eff">SM</span></div></div>
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-d4')" id="card-d4" style="opacity:0.7"><div class="card-title">EDA: class imbalance analysis & sample visualization</div><div class="card-meta"><span class="tag data">Data</span><span class="assignee" style="background:#2d3748;color:var(--muted)">PK</span></div></div>
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-d5')" id="card-d5" style="opacity:0.7"><div class="card-title">GitHub repo setup with CI pipeline & branch strategy</div><div class="card-meta"><span class="tag infra">Infra</span><span class="assignee" style="background:#1a3a2a;color:var(--accent)">RV</span></div></div>
+      <div class="card" draggable="true" ondragstart="onDragStart(event,'card-d6')" id="card-d6" style="opacity:0.7"><div class="card-title">Annotate 1,000 images with bounding boxes (parasitemia stage)</div><div class="card-meta"><span class="tag data">Data</span><span class="assignee" style="background:#2d1f47;color:var(--accent4)">AK</span></div></div>
+    </div>
+    <div class="add-btn" onclick="addCard('done')">＋ Add task</div>
+  </div>
+</div>
+</div>
+<script>
+let dragSrcId = null;
+function onDragStart(e, id) { dragSrcId = id; e.dataTransfer.effectAllowed = 'move'; setTimeout(() => document.getElementById(id).classList.add('dragging'), 0); }
+document.addEventListener('dragend', () => { document.querySelectorAll('.card').forEach(c => c.classList.remove('dragging')); });
+function onDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+function onDrop(e, colId) {
+  e.preventDefault();
+  if (!dragSrcId) return;
+  const card = document.getElementById(dragSrcId);
+  const col = document.getElementById('col-' + colId);
+  if (!card || !col) return;
+  col.appendChild(card);
+  card.dataset.col = colId;
+  card.style.opacity = colId === 'done' ? '0.7' : '1';
+  card.classList.remove('dragging');
+  dragSrcId = null;
+  updateCounts();
+}
+function updateCounts() {
+  ['todo','inprog','review','done'].forEach(id => {
+    document.getElementById('cnt-' + id).textContent = document.getElementById('col-' + id).querySelectorAll('.card').length;
+  });
+}
+let n = 100;
+function addCard(colId) {
+  const id = 'card-new-' + (n++);
+  const card = document.createElement('div');
+  card.className = 'card'; card.id = id; card.draggable = true; card.dataset.col = colId;
+  if (colId === 'done') card.style.opacity = '0.7';
+  card.innerHTML = `<div class="card-title" contenteditable="true" style="outline:none;border-bottom:1px dashed var(--accent);padding-bottom:2px">New task — click to rename</div><div class="card-meta"><span class="tag ml">ML</span><span class="priority med">Med</span></div>`;
+  card.setAttribute('ondragstart', `onDragStart(event,'${id}')`);
+  document.getElementById('col-' + colId).appendChild(card);
+  updateCounts();
+  card.querySelector('.card-title').focus();
+}
+</script>
+</body>
+</html>
